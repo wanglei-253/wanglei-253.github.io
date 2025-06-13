@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>学习时间记录</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            color: #333;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 100%;
+            padding: 10px;
+        }
+        .header {
+            background-color: #4285f4;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .view {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        .view.active {
+            display: block;
+        }
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .calendar th {
+            background-color: #f1f1f1;
+            padding: 8px;
+            text-align: center;
+            font-weight: normal;
+            color: #666;
+        }
+        .calendar td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #f1f1f1;
+            height: 45px;
+            position: relative;
+        }
+        .calendar td.current-month {
+            background-color: white;
+        }
+        .calendar td.other-month {
+            background-color: #fafafa;
+            color: #ccc;
+        }
+        .calendar td.today {
+            background-color: #e6f2ff;
+            font-weight: bold;
+        }
+        .calendar td.has-record {
+            background-color: #e8f5e9;
+        }
+        .calendar-day {
+            display: block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 50%;
+            margin: 0 auto;
+        }
+        .calendar td.today .calendar-day {
+            background-color: #4285f4;
+            color: white;
+        }
+        .study-time {
+            font-size: 10px;
+            color: #666;
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px;
+            background-color: white;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .month-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .nav-button {
+            background-color: transparent;
+            border: none;
+            font-size: 16px;
+            padding: 5px 15px;
+            color: #4285f4;
+            border-radius: 5px;
+        }
+        .back-button {
+            background-color: #f1f1f1;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: inline-flex;
+            align-items: center;
+            color: #333;
+        }
+        .back-button svg {
+            margin-right: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:active {
+            opacity: 0.8;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+        .record-item {
+            background-color: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .record-time {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .record-type {
+            display: inline-block;
+            background-color: #e6f2ff;
+            color: #4285f4;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .record-desc {
+            color: #666;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+        .summary-item {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .progress-bar {
+            height: 8px;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #4285f4;
+            border-radius: 4px;
+        }
+        .tab-bar {
+            display: flex;
+            background-color: white;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            border: none;
+            background: none;
+        }
+        .tab-button.active {
+            color: #4285f4;
+        }
+        .tab-button svg {
+            display: block;
+            margin: 0 auto 5px;
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+        .main-content {
+            padding-bottom: 60px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header" id="header">学习时间记录</div>
+    
+    <div class="container">
+        <!-- 日历视图 -->
+        <div class="main-content">
+            <div class="view active" id="calendar-view">
+                <div class="month-header">
+                    <button class="nav-button" id="prev-month">‹</button>
+                    <div class="month-title" id="current-month"></div>
+                    <button class="nav-button" id="next-month">›</button>
+                </div>
+                <table class="calendar" id="calendar">
+                    <thead>
+                        <tr>
+                            <th>日</th>
+                            <th>一</th>
+                            <th>二</th>
+                            <th>三</th>
+                            <th>四</th>
+                            <th>五</th>
+                            <th>六</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendar-body"></tbody>
+                </table>
+            </div>
+
+            <!-- 记录视图 -->
+            <div class="view" id="record-view">
+                <button class="back-button" id="back-to-calendar">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    返回
+                </button>
+                <div class="form-group">
+                    <label for="start-time">开始时间</label>
+                    <input type="time" id="start-time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="end-time">结束时间</label>
+                    <input type="time" id="end-time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="study-type">学习类型</label>
+                    <select id="study-type" required>
+                        <option value="">-- 请选择 --</option>
+                        <option value="言语">言语</option>
+                        <option value="常识">常识</option>
+                        <option value="数量">数量</option>
+                        <option value="判断">判断</option>
+                        <option value="资料">资料</option>
+                        <option value="申论小题">申论小题</option>
+                        <option value="申论作文">申论作文</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="study-desc">学习内容描述 (可选)</label>
+                    <input type="text" id="study-desc" placeholder="简要描述学习内容">
+                </div>
+                
+                <button type="button" id="add-record">添加记录</button>
+                
+                <div id="records-list"></div>
+            </div>
+
+            <!-- 汇总视图 -->
+            <div class="view" id="summary-view">
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>言语</span>
+                        <span id="speech-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="speech-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>常识</span>
+                        <span id="common-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="common-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>数量</span>
+                        <span id="quantity-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="quantity-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>判断</span>
+                        <span id="judgment-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="judgment-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>资料</span>
+                        <span id="data-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="data-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>申论小题</span>
+                        <span id="essay-minor-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="essay-minor-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>申论作文</span>
+                        <span id="essay-major-hours">0小时</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="essay-major-progress"></div>
+                    </div>
+                </div>
+                
+                <div class="summary-item">
+                    <div class="summary-header">
+                        <span>总计学习时间</span>
+                        <span id="total-hours">0小时</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="tab-bar">
+        <button class="tab-button active" data-view="calendar-view">
+            <svg viewBox="0 0 24 24">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+            </svg>
+            日历
+        </button>
+        <button class="tab-button" data-view="summary-view">
+            <svg viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            </svg>
+            汇总
+        </button>
+    </div>
+
+    <script>
+        // 数据存储
+        let records = JSON.parse(localStorage.getItem('studyRecords')) || {};
+        let currentDate = new Date();
+        let selectedDate = null;
+
+        // 切换视图
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+            
+            // 更新头部标题
+            const titles = {
+                'calendar-view': '学习时间记录',
+                'record-view': '添加学习记录',
+                'summary-view': '学习时间汇总'
+            };
+            document.getElementById('header').textContent = titles[viewId] || '学习时间记录';
+            
+            // 更新标签栏状态
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            if (viewId === 'calendar-view' || viewId === 'summary-view') {
+                const tabButton = document.querySelector(`.tab-button[data-view="${viewId}"]`);
+                if (tabButton) tabButton.classList.add('active');
+            }
+            
+            // 如果是汇总视图，更新数据
+            if (viewId === 'summary-view') {
+                updateSummaryView();
+            }
+        }
+
+        // 显示日历
+        function renderCalendar() {
+            const calendarBody = document.getElementById('calendar-body');
+            calendarBody.innerHTML = '';
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // 设置月份标题
+            document.getElementById('current-month').textContent = 
+                `${year}年 ${month + 1}月`;
+            
+            // 获取当月第一天和最后一天
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            // 获取第一天是星期几 (0-6, 0是星期日)
+            const firstDayOfWeek = firstDay.getDay();
+            
+            // 获取上个月的最后几天
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            
+            // 获取总行数 (6行)
+            let date = 1;
+            let nextMonthDate = 1;
+            
+            for (let i = 0; i < 6; i++) {
+                // 如果已经超过最后一天且已经显示了下个月的前几天，就停止
+                if (i > 0 && date > lastDay.getDate()) break;
+                
+                const row = document.createElement('tr');
+                
+                for (let j = 0; j < 7; j++) {
+                    const cell = document.createElement('td');
+                    
+                    if (i === 0 && j < firstDayOfWeek) {
+                        // 上个月的日期
+                        const prevDate = prevMonthLastDay - (firstDayOfWeek - j - 1);
+                        cell.textContent = prevDate;
+                        cell.classList.add('other-month');
+                    } else if (date > lastDay.getDate()) {
+                        // 下个月的日期
+                        cell.textContent = nextMonthDate;
+                        cell.classList.add('other-month');
+                        nextMonthDate++;
+                    } else {
+                        // 当月的日期
+                        const daySpan = document.createElement('span');
+                        daySpan.className = 'calendar-day';
+                        daySpan.textContent = date;
+                        cell.appendChild(daySpan);
+                        cell.classList.add('current-month');
+                        
+                        // 检查是否是今天
+                        const today = new Date();
+                        if (date === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                            cell.classList.add('today');
+                        }
+                        
+                        // 检查是否有记录
+                        const dateStr = formatDate(new Date(year, month, date));
+                        if (records[dateStr] && records[dateStr].length > 0) {
+                            cell.classList.add('has-record');
+                            
+                            // 计算当天总学习时间
+                            const totalHours = records[dateStr].reduce((sum, record) => {
+                                return sum + parseFloat(record.duration);
+                            }, 0);
+                            
+                            // 添加学习时间显示
+                            const timeSpan = document.createElement('div');
+                            timeSpan.className = 'study-time';
+                            timeSpan.textContent = `${totalHours.toFixed(1)}h`;
+                            cell.appendChild(timeSpan);
+                        }
+                        
+                        // 添加点击事件
+                        cell.addEventListener('click', () => openRecordView(new Date(year, month, date)));
+                        
+                        date++;
+                    }
+                    
+                    row.appendChild(cell);
+                }
+                
+                calendarBody.appendChild(row);
+            }
+        }
+        
+        // 打开记录视图
+        function openRecordView(date) {
+            selectedDate = date;
+            const dateStr = formatDate(date);
+            
+            // 清空表单
+            document.getElementById('start-time').value = '';
+            document.getElementById('end-time').value = '';
+            document.getElementById('study-type').value = '';
+            document.getElementById('study-desc').value = '';
+            
+            // 清空记录列表
+            document.getElementById('records-list').innerHTML = '';
+            
+            // 如果有记录，加载记录
+            if (records[dateStr]) {
+                records[dateStr].forEach(record => {
+                    addRecordToDOM(record, false);
+                });
+            }
+            
+            // 切换视图
+            switchView('record-view');
+        }
+        
+        // 添加记录到DOM
+        function addRecordToDOM(record, saveToStorage) {
+            const dateStr = formatDate(selectedDate);
+            
+            // 如果保存到存储，更新records对象
+            if (saveToStorage) {
+                if (!records[dateStr]) {
+                    records[dateStr] = [];
+                }
+                records[dateStr].push(record);
+                localStorage.setItem('studyRecords', JSON.stringify(records));
+                
+                // 重新渲染日历以更新学习时间显示
+                renderCalendar();
+            }
+            
+            // 创建记录元素
+            const recordElement = document.createElement('div');
+            recordElement.className = 'record-item';
+            recordElement.innerHTML = `
+                <div class="record-time">${record.startTime} - ${record.endTime} (${record.duration}小时)</div>
+                <div>
+                    <span class="record-type">${record.studyType}</span>
+                </div>
+                ${record.studyDesc && record.studyDesc !== '-' ? `<div class="record-desc">${record.studyDesc}</div>` : ''}
+                <button class="delete-btn" style="position: absolute; right: 12px; top: 12px;">删除</button>
+            `;
+            
+            // 添加删除按钮事件
+            recordElement.querySelector('.delete-btn').addEventListener('click', function() {
+                // 从存储中删除
+                const index = records[dateStr].findIndex(r => 
+                    r.startTime === record.startTime && 
+                    r.endTime === record.endTime && 
+                    r.studyType === record.studyType
+                );
+                
+                if (index !== -1) {
+                    records[dateStr].splice(index, 1);
+                    localStorage.setItem('studyRecords', JSON.stringify(records));
+                    
+                    // 如果当天没有记录了，删除当天的数组
+                    if (records[dateStr].length === 0) {
+                        delete records[dateStr];
+                        localStorage.setItem('studyRecords', JSON.stringify(records));
+                    }
+                    
+                    // 重新渲染日历以更新学习时间显示
+                    renderCalendar();
+                }
+                
+                // 从DOM中删除
+                recordElement.remove();
+            });
+            
+            document.getElementById('records-list').appendChild(recordElement);
+        }
+        
+        // 计算时间差（小时）
+        function calculateDuration(start, end) {
+            const startTime = new Date(`2000-01-01T${start}`);
+            const endTime = new Date(`2000-01-01T${end}`);
+            
+            // 处理跨午夜的情况
+            if (endTime < startTime) {
+                endTime.setDate(endTime.getDate() + 1);
+            }
+            
+            const diffMs = endTime - startTime;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            
+            return diffHours.toFixed(1);
+        }
+        
+        // 格式化日期为YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 更新汇总视图
+        function updateSummaryView() {
+            const types = ['言语', '常识', '数量', '判断', '资料', '申论小题', '申论作文'];
+            let typeHours = {};
+            let totalHours = 0;
+            
+            // 初始化
+            types.forEach(type => {
+                typeHours[type] = 0;
+            });
+            
+            // 计算每种类型的学习时间
+            Object.values(records).forEach(dayRecords => {
+                dayRecords.forEach(record => {
+                    if (types.includes(record.studyType)) {
+                        typeHours[record.studyType] += parseFloat(record.duration);
+                        totalHours += parseFloat(record.duration);
+                    }
+                });
+            });
+            
+            // 更新DOM
+            types.forEach(type => {
+                const typeKey = type.replace(/ /g, '-').toLowerCase();
+                document.getElementById(`${typeKey}-hours`).textContent = `${typeHours[type].toFixed(1)}小时`;
+                
+                // 计算进度条宽度 (最大为100%)
+                const progressPercent = totalHours > 0 ? (typeHours[type] / totalHours * 100) : 0;
+                document.getElementById(`${typeKey}-progress`).style.width = `${progressPercent}%`;
+            });
+            
+            document.getElementById('total-hours').textContent = `${totalHours.toFixed(1)}小时`;
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCalendar();
+            
+            // 事件监听
+            document.getElementById('prev-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+            
+            document.getElementById('next-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+            
+            document.getElementById('back-to-calendar').addEventListener('click', function() {
+                switchView('calendar-view');
+            });
+            
+            document.getElementById('add-record').addEventListener('click', function() {
+                const startTime = document.getElementById('start-time').value;
+                const endTime = document.getElementById('end-time').value;
+                const studyType = document.getElementById('study-type').value;
+                const studyDesc = document.getElementById('study-desc').value || '-';
+                
+                // 验证
+                if (!startTime || !endTime || !studyType) {
+                    alert('请填写完整信息');
+                    return;
+                }
+                
+                // 验证结束时间是否晚于开始时间
+                if (startTime >= endTime) {
+                    alert('结束时间必须晚于开始时间');
+                    return;
+                }
+                
+                // 计算持续时间
+                const duration = calculateDuration(startTime, endTime);
+                
+                // 创建记录对象
+                const record = {
+                    startTime,
+                    endTime,
+                    duration,
+                    studyType,
+                    studyDesc
+                };
+                
+                // 添加到DOM和存储
+                addRecordToDOM(record, true);
+                
+                // 清空表单
+                document.getElementById('start-time').value = '';
+                document.getElementById('end-time').value = '';
+                document.getElementById('study-type').value = '';
+                document.getElementById('study-desc').value = '';
+            });
+            
+            // 标签栏切换
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const viewId = this.getAttribute('data-view');
+                    switchView(viewId);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
